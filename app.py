@@ -296,12 +296,12 @@ def main():
     #     type=['png', 'jpg', 'jpeg'],
     #     help="Upload a clear image of your document"
     # )
-    if uploaded_files:
+    if uploaded_file:
         doc_handler = DocumentHandler()
     
     if st.button("Process Documents"):
         with st.spinner("Processing documents..."):
-            files_to_process = [(file.read(), file.name) for file in uploaded_files]
+            files_to_process = [(file.read(), file.name) for file in uploaded_file]
             results = doc_handler.process_batch(
                 files_to_process,
                 model,
