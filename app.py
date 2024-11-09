@@ -8,6 +8,9 @@ from doctr.models import ocr_predictor
 import io
 import traceback
 import pandas as pd
+import sys
+print(sys.path)  # This will print the list of paths Python is searching
+
 from typing import Dict, List, Tuple, Optional
 from utils.document_handler import DocumentHandler
 
