@@ -9,6 +9,7 @@ import io
 import traceback
 import pandas as pd
 from typing import Dict, List, Tuple, Optional
+from document_handler import DocumentHandler
 
 # Define field categories and their definitions
 FIELD_CATEGORIES = {
