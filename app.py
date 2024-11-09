@@ -297,7 +297,7 @@ def main():
     #     help="Upload a clear image of your document"
     # )
     if uploaded_files:
-    doc_handler = DocumentHandler()
+        doc_handler = DocumentHandler()
     
     if st.button("Process Documents"):
         with st.spinner("Processing documents..."):
