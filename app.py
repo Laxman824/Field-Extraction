@@ -287,6 +287,7 @@ def main():
     # Create sidebar and get selected options
     selected_fields, confidence_threshold = create_sidebar()
     import os
+    import sys
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     sys.path.append(project_root)
     
