@@ -6,6 +6,10 @@ app:
     - jpg
     - jpeg
     - png
+    - tiff
+    - tif
+    - pdf
+    - bmp
 
 model:
   cache_dir: "./model_cache"

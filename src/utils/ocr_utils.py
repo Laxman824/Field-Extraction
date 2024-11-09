@@ -105,3 +105,12 @@ def process_image(image, ocr_model):
         st.error(f"An error occurred during image processing: {str(e)}")
         st.code(traceback.format_exc())
         return None, None, None, None
+def process_batch_images(images, model, batch_size=4):
+    """Process multiple images in batches"""
+    results = []
+    for i in range(0, len(images), batch_size):
+        batch = images[i:i + batch_size]
+        batch_np = [np.array(img) for img in batch]
+        batch_results = model(batch_np)
+        results.extend(batch_results)
+    return results

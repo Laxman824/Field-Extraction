@@ -5,3 +5,4 @@ libxext6
 libxrender-dev
 python3-opencv
 tesseract-ocr
+poppler-utils

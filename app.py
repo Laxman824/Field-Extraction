@@ -290,12 +290,28 @@ def main():
     # Load model
     model = load_model()
 
-    # File upload
-    uploaded_file = st.file_uploader(
-        "Choose an image file",
-        type=['png', 'jpg', 'jpeg'],
-        help="Upload a clear image of your document"
-    )
+    # # File upload
+    # uploaded_file = st.file_uploader(
+    #     "Choose an image file",
+    #     type=['png', 'jpg', 'jpeg'],
+    #     help="Upload a clear image of your document"
+    # )
+    if uploaded_files:
+    doc_handler = DocumentHandler()
+    
+    if st.button("Process Documents"):
+        with st.spinner("Processing documents..."):
+            files_to_process = [(file.read(), file.name) for file in uploaded_files]
+            results = doc_handler.process_batch(
+                files_to_process,
+                model,
+                selected_fields,
+                confidence_threshold
+            )
+            display_batch_results(results)
+
+# Add cleanup at the end
+doc_handler.cleanup()
 
     if uploaded_file is not None:
         # Process image
