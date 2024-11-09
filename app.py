@@ -282,7 +282,7 @@ def display_results(extracted_info: Dict):
 def main():
     st.set_page_config(page_title="Enhanced Document OCR", layout="wide")
     st.title("Enhanced Document OCR Processing")
-    st.write("Select fields to extract and upload your document")
+    st.write("Select fields to extract and upload your documents")
 
     # Create sidebar and get selected options
     selected_fields, confidence_threshold = create_sidebar()
@@ -290,56 +290,119 @@ def main():
     # Load model
     model = load_model()
 
-    # File upload
-    uploaded_file = st.file_uploader(
-        "Choose an image file",
-        type=['png', 'jpg', 'jpeg'],
-        help="Upload a clear image of your document"
-    )
+    # Initialize document handler
+    doc_handler = DocumentHandler()
 
-    if uploaded_file is not None:
-        # Process image
-        image = Image.open(uploaded_file)
-        results = process_image_with_fields(
-            image, model, selected_fields, confidence_threshold
+    # Add tabs for single and batch processing
+    single_tab, batch_tab = st.tabs(["Single Document", "Batch Processing"])
+
+    with single_tab:
+        # Single file processing
+        uploaded_file = st.file_uploader(
+            "Choose an image file",
+            type=['png', 'jpg', 'jpeg', 'tiff', 'tif', 'pdf'],
+            help="Upload a clear image of your document",
+            key="single_upload"
         )
 
-        if all(result is not None for result in results):
-            img_all_text, img_fields, extracted_info, bounding_boxes = results
+        if uploaded_file is not None:
+            try:
+                # Process single document
+                with st.spinner("Processing document..."):
+                    # Convert document to image if needed
+                    file_content = uploaded_file.read()
+                    images = doc_handler.convert_to_images(file_content, uploaded_file.name)
+                    
+                    if not images:
+                        st.error("Could not process the document. Please check the file format.")
+                        return
 
-            # Display results
-            col1, col2 = st.columns(2)
-            with col1:
-                st.subheader("Original Document with Detection")
-                st.image(img_all_text)
+                    # Process each page
+                    for idx, image in enumerate(images):
+                        st.subheader(f"Page {idx + 1}" if len(images) > 1 else "Results")
+                        
+                        results = process_image_with_fields(
+                            image, model, selected_fields, confidence_threshold
+                        )
 
-            with col2:
-                st.subheader("Extracted Fields")
-                st.image(img_fields)
+                        if all(result is not None for result in results):
+                            img_all_text, img_fields, extracted_info, bounding_boxes = results
 
-            # Display extracted information
-            st.header("Extracted Information")
-            display_results(extracted_info)
+                            # Display results
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                st.subheader("Original Document with Detection")
+                                st.image(img_all_text)
 
-            # Download buttons
-            st.subheader("Download Results")
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.download_button(
-                    "Download Field Values",
-                    data=json.dumps(extracted_info, indent=4),
-                    file_name="extracted_fields.json",
-                    mime="application/json"
-                )
-            
-            with col2:
-                st.download_button(
-                    "Download Bounding Boxes",
-                    data=json.dumps({"form": bounding_boxes}, indent=4),
-                    file_name="bounding_boxes.json",
-                    mime="application/json"
-                )
+                            with col2:
+                                st.subheader("Extracted Fields")
+                                st.image(img_fields)
+
+                            # Display extracted information
+                            st.header("Extracted Information")
+                            display_results(extracted_info)
+
+                            # Download buttons
+                            st.subheader("Download Results")
+                            dl_col1, dl_col2 = st.columns(2)
+                            
+                            with dl_col1:
+                                st.download_button(
+                                    f"Download Field Values (Page {idx + 1})",
+                                    data=json.dumps(extracted_info, indent=4),
+                                    file_name=f"extracted_fields_page_{idx + 1}.json",
+                                    mime="application/json"
+                                )
+                            
+                            with dl_col2:
+                                st.download_button(
+                                    f"Download Bounding Boxes (Page {idx + 1})",
+                                    data=json.dumps({"form": bounding_boxes}, indent=4),
+                                    file_name=f"bounding_boxes_page_{idx + 1}.json",
+                                    mime="application/json"
+                                )
+
+            except Exception as e:
+                st.error(f"An error occurred: {str(e)}")
+                st.code(traceback.format_exc())
+
+    with batch_tab:
+        # Batch file processing
+        uploaded_files = st.file_uploader(
+            "Choose multiple documents",
+            type=['png', 'jpg', 'jpeg', 'tiff', 'tif', 'pdf'],
+            accept_multiple_files=True,
+            help="Upload multiple documents for batch processing",
+            key="batch_upload"
+        )
+
+        if uploaded_files:
+            if st.button("Process Batch"):
+                with st.spinner("Processing documents..."):
+                    try:
+                        # Prepare files for processing
+                        files_to_process = [
+                            (file.read(), file.name) for file in uploaded_files
+                        ]
+                        
+                        # Process batch
+                        results = doc_handler.process_batch(
+                            files_to_process,
+                            model,
+                            selected_fields,
+                            confidence_threshold
+                        )
+                        
+                        # Display batch results
+                        display_batch_results(results)
+                        
+                    except Exception as e:
+                        st.error(f"An error occurred during batch processing: {str(e)}")
+                        st.code(traceback.format_exc())
+
+    # Cleanup temporary files
+    if 'doc_handler' in locals():
+        doc_handler.cleanup()
 
 if __name__ == "__main__":
     main()
