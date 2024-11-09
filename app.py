@@ -311,7 +311,7 @@ def main():
             display_batch_results(results)
 
 # Add cleanup at the end
-doc_handler.cleanup()
+    doc_handler.cleanup()
 
     if uploaded_file is not None:
         # Process image
