@@ -292,7 +292,7 @@ def main():
     sys.path.append(project_root)
     
 
-    from src.utils.document_handler import DocumentHandler
+    from utils.document_handler import DocumentHandler
     # Load model
     model = load_model()
 
