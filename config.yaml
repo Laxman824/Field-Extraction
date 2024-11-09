@@ -1,0 +1,17 @@
+app:
+  title: "Document OCR Processing"
+  description: "Upload an image to extract text and identify fields"
+  max_file_size: 5
+  allowed_extensions:
+    - jpg
+    - jpeg
+    - png
+
+model:
+  cache_dir: "./model_cache"
+  pretrained: true
+
+output:
+  save_directory: "./data/output"
+  save_visualizations: true
+  save_json: true
