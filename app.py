@@ -287,8 +287,8 @@ def main():
     # Create sidebar and get selected options
     selected_fields, confidence_threshold = create_sidebar()
     
-    # Load model
-    model = load_model()
+    # # Load model
+    # model = load_model()
     from utils.document_handler import DocumentHandler
     from utils.image_processing import preprocess_image
     from models.model_loader import load_model
