@@ -9,6 +9,9 @@ from typing import List, Dict, Union, Tuple
 import fitz  # PyMuPDF for PDF handling
 from concurrent.futures import ThreadPoolExecutor
 import traceback
+import numpy as np
+from utils.image_processing import preprocess_image
+from utils.ocr_utils import process_image_with_fields
 
 class DocumentHandler:
     SUPPORTED_FORMATS = {
@@ -17,6 +20,7 @@ class DocumentHandler:
     }
     
     def __init__(self, max_workers: int = 4):
+        """Initialize document handler with maximum number of parallel workers"""
         self.max_workers = max_workers
         self.temp_dir = tempfile.mkdtemp()
         
@@ -40,7 +44,10 @@ class DocumentHandler:
             
             # Handle regular image formats
             elif ext in self.SUPPORTED_FORMATS['images']:
-                image = Image.open(file)
+                if isinstance(file, bytes):
+                    image = Image.open(io.BytesIO(file))
+                else:
+                    image = Image.open(file)
                 return [image.convert('RGB')]
             
             else:
@@ -70,7 +77,8 @@ class DocumentHandler:
                 pix = page.get_pixmap(matrix=fitz.Matrix(300/72, 300/72))
                 img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
                 images.append(img)
-                
+            
+            pdf_document.close()
             return images
             
         except Exception as e:
@@ -80,13 +88,18 @@ class DocumentHandler:
     def _convert_tiff_to_images(self, file) -> List[Image.Image]:
         """Convert TIFF to list of images"""
         try:
-            tiff_image = Image.open(file)
+            if isinstance(file, bytes):
+                tiff_image = Image.open(io.BytesIO(file))
+            else:
+                tiff_image = Image.open(file)
+                
             images = []
             
             for i in range(tiff_image.n_frames):
                 tiff_image.seek(i)
                 images.append(tiff_image.copy().convert('RGB'))
-                
+            
+            tiff_image.close()
             return images
             
         except Exception as e:
@@ -120,18 +133,22 @@ class DocumentHandler:
             
             # Create progress bar
             progress_bar = st.progress(0)
+            status_text = st.empty()
             
             # Process results as they complete
             for idx, (file_name, future) in enumerate(futures):
                 try:
                     result = future.result()
                     results[file_name] = result
-                    progress_bar.progress((idx + 1) / len(futures))
+                    progress = (idx + 1) / len(futures)
+                    progress_bar.progress(progress)
+                    status_text.text(f"Processing: {int(progress * 100)}% complete")
                 except Exception as e:
                     st.error(f"Error processing {file_name}: {str(e)}")
                     results[file_name] = {"error": str(e)}
             
             progress_bar.empty()
+            status_text.empty()
         
         return results
 
@@ -152,16 +169,25 @@ class DocumentHandler:
             # Process each image
             page_results = []
             for idx, image in enumerate(images):
+                # Preprocess image
+                processed_image = preprocess_image(image)
+                
+                # Process image
                 result = process_image_with_fields(
-                    image,
+                    processed_image,
                     ocr_model,
                     selected_fields,
                     confidence_threshold
                 )
-                page_results.append({
-                    "page_number": idx + 1,
-                    "results": result
-                })
+                
+                if result[0] is not None:  # Check if processing was successful
+                    page_results.append({
+                        "page_number": idx + 1,
+                        "results": {
+                            "extracted_info": result[2],
+                            "bounding_boxes": result[3]
+                        }
+                    })
             
             return {
                 "status": "success",
