@@ -289,7 +289,9 @@ def main():
     
     # Load model
     model = load_model()
-
+from utils.document_handler import DocumentHandler
+from utils.image_processing import preprocess_image
+from models.model_loader import load_model
     # Initialize document handler
     doc_handler = DocumentHandler()
 
